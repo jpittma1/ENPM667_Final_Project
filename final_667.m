@@ -275,7 +275,8 @@ plot(t,state_history(:,3),'b')
 grid on;
 
 %Lyapunov's indirect method to certify Stability of closed loop system
-Lyp = eig(A-B*K);
+disp('Eigenvalues using Lyapunov indirect method')
+Lyp = eig(A-B*K)
 stability_check = 1;
 % for i = 1:6
 for i = 1:size(A,1)
@@ -291,6 +292,65 @@ end
 
 %----------Second Component--------------------
 %---Part E----------------------
+%Output Vectors
+V1 = [1 0 0 0 0 0];             %For output (x(t))
+V2 = [0 1 0 0 0 0;           %For output (t1(t),th2(t)) 
+      0 0 1 0 0 0];
+V3 = [1 0 0 0 0 0;           %For output (x(t),th2(t))    
+      0 0 1 0 0 0];
+V4 = [1 0 0 0 0 0;           %For output (x(t),th1(t),th2(t))
+      0 1 0 0 0 0;
+      0 0 1 0 0 0];
+
+%Check Observability (rank = n)
+obs_test1 = V1;
+temp1 = V1;
+obs_test2 = V2;
+temp2 = V2;
+obs_test3 = V3;
+temp3 = V3;
+obs_test4 = V4;
+temp4 = V4;
+
+n = size(A)-1;
+
+for i = 1:n
+    temp1 = temp1*A;
+    obs_test1 = horzcat(obs_test1, temp1);
+
+    temp2 = temp2*A;
+    obs_test2 = horzcat(obs_test2, temp2);
+
+    temp3 = temp3*A;
+    obs_test3 = horzcat(obs_test3, temp3);
+
+    temp4 = temp4*A;
+    obs_test4 = horzcat(obs_test4, temp4);
+end
+
+disp('C matrices')
+obs_res1 = rank(obs_test1)
+obs_res2 = rank(obs_test2)
+obs_res3 = rank(obs_test3)
+obs_res4 = rank(obs_test4)
+
+
+if obs_res1 == size(A,1)
+    disp("System is observable for x(t)");
+end
+if obs_res2 == size(A,1)
+else
+    disp("System is not observable for th1(t),th2(t))");
+end
+if obs_res3 == size(A,1)
+    disp("System is observable for x(t),th2(t)");
+end
+if obs_res4 == size(A,1)
+    disp("System is observable for x(t,th1(t),th2(t))");
+end
+
+%-----Part E-----
+%Observer
 
 function sdot = linearized_model(s,t,A,B,K)
 %% Linearized Model
