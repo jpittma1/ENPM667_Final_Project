@@ -110,8 +110,7 @@ B = subs (J_U,{sym('x_a'),sym('th1'), sym('th2'), sym('Dx'),sym('Dth1'), sym('Dt
 % -1/(M*l1)
 % -1/(M*l2)
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+%----------------------------------
 %----------Part C----------
 % Create Controllability Matrix/conditions for
 %       M, m1, m2, l1, l2
@@ -136,6 +135,7 @@ C_det = simplify (det(C))
 % Proves that will be singular when l1=l2
 singular_test = solve(C_det==0, [l1]); 
 
+%----------------------------------
 %----------Part D--------------------
 % Plug in M, m1, m2, l1, l2 values into C matrix
 C = subs(C, {M, m1, m2, l1, l2, g},{1000, 100, 100, 20, 10, 10})
@@ -289,68 +289,184 @@ if stability_check == 1
     disp("Eigen values all have negative, real parts, so it is stable locally");
 end
 
-
+%----------------------------------
 %----------Second Component--------------------
 %---Part E----------------------
 %Output Vectors
-V1 = [1 0 0 0 0 0];             %For output (x(t))
+disp('C matrices')
+V1 = [1 0 0 0 0 0]             %For output (x(t))
 V2 = [0 1 0 0 0 0;           %For output (t1(t),th2(t)) 
-      0 0 1 0 0 0];
+      0 0 1 0 0 0]
 V3 = [1 0 0 0 0 0;           %For output (x(t),th2(t))    
-      0 0 1 0 0 0];
+      0 0 1 0 0 0]
 V4 = [1 0 0 0 0 0;           %For output (x(t),th1(t),th2(t))
       0 1 0 0 0 0;
-      0 0 1 0 0 0];
+      0 0 1 0 0 0]
 
 %Check Observability (rank = n)
-obs_test1 = V1;
-temp1 = V1;
-obs_test2 = V2;
-temp2 = V2;
-obs_test3 = V3;
-temp3 = V3;
-obs_test4 = V4;
-temp4 = V4;
 
-n = size(A)-1;
+obs_test1 = [V1;V1*A;V1*A^2;V1*A^3;V1*A^4;V1*A^5;];
+obs_test2 = [V2;V2*A;V2*A^2;V2*A^3;V2*A^4;V2*A^5;];
+obs_test3 = [V3;V3*A;V3*A^2;V3*A^3;V3*A^4;V3*A^5;];
+obs_test4 = [V4;V4*A;V4*A^2;V4*A^3;V4*A^4;V4*A^5;];
 
-for i = 1:n
-    temp1 = temp1*A;
-    obs_test1 = horzcat(obs_test1, temp1);
-
-    temp2 = temp2*A;
-    obs_test2 = horzcat(obs_test2, temp2);
-
-    temp3 = temp3*A;
-    obs_test3 = horzcat(obs_test3, temp3);
-
-    temp4 = temp4*A;
-    obs_test4 = horzcat(obs_test4, temp4);
-end
-
-disp('C matrices')
-obs_res1 = rank(obs_test1)
-obs_res2 = rank(obs_test2)
-obs_res3 = rank(obs_test3)
-obs_res4 = rank(obs_test4)
+% Calculate ranks for Observability
+% disp('Ranks')
+obs_res1 = rank(obs_test1);
+obs_res2 = rank(obs_test2);
+obs_res3 = rank(obs_test3);
+obs_res4 = rank(obs_test4);
 
 
 if obs_res1 == size(A,1)
-    disp("System is observable for x(t)");
+    disp("System is observable for x(t)");  %True
+else
+    disp("System is NOT observable for x(t)");
 end
 if obs_res2 == size(A,1)
+    disp("System is observable for th1(t),th2(t))");
 else
-    disp("System is not observable for th1(t),th2(t))");
+    disp("System is NOT observable for th1(t),th2(t))"); %True
 end
 if obs_res3 == size(A,1)
-    disp("System is observable for x(t),th2(t)");
+    disp("System is observable for x(t),th2(t)");   %True
+else
+    disp("System is NOT observable for x(t),th2(t)");
 end
 if obs_res4 == size(A,1)
-    disp("System is observable for x(t,th1(t),th2(t))");
+    disp("System is observable for x(t,th1(t),th2(t))");    %True
+else
+    disp("System is NOT observable for x(t,th1(t),th2(t))");
 end
 
-%-----Part E-----
-%Observer
+%----------------------------------
+%--------Part F-------
+%Luenberger Observer for x(t), (x(t),th2(t)), (x(t), th1(t),th2(t))
+
+D=[0]; %Set to 0
+p=[-2 -3 -4 -5 -6 -7 ]; % Needed values for p to meet place rank requirement
+x_0= [ 0 ; 0 ; 0.1 ; 0.1 ;0 ; 0 ; 0 ; 0 ; 0 ; 0 ; 0 ; 0];
+
+%---For output (x(t))---
+figure('Name', 'Luenberger Observer for x(t)')
+C = V1;
+
+% Pole Placement method
+L=place(A',C',p);
+L=L';
+
+%New State Matrices with observer
+Ac=[(A-B*K) (B*K); zeros(size(A)) (A-L*C)];
+Bc=[ B ;zeros(size(B))];
+Cc= [C zeros(size(C))];
+Dc=D;
+
+sys=ss(Ac,Bc,Cc,Dc);
+step(sys);
+initial(sys,x_0);
+grid on
+
+%---For output (x(t),th2(t)) ---
+figure('Name', 'Luenberger Observer for x(t),th2(t)')
+C = V3;
+L=place(A',C',p);
+L=L';
+
+Ac=[(A-B*K) (B*K); zeros(size(A)) (A-L*C)];
+Cc= [C zeros(size(C))];
+
+sys=ss(Ac,Bc,Cc,Dc);
+step(sys);
+initial(sys,x_0)
+grid on
+
+%---For output (x(t),t1(t),t2(t))---
+figure('Name', 'Luenberger Observer for x(t),th1(t),th2(t)')
+C = V4;
+
+L=place(A',C',p);
+L=L';
+
+Ac=[(A-B*K) (B*K); zeros(size(A)) (A-L*C)];
+Cc= [C zeros(size(C))];
+
+sys=ss(Ac,Bc,Cc,Dc);
+step(sys);
+initial(sys,x_0)
+grid on
+
+%----------------------------------
+%----------Part G--------
+%--Design LQG controller to original nonlinear system
+% X_dot = AX + BU + BW = CX + V
+
+% Noise Variables
+Bd = 0.001.*eye(6);             %input disturbance covariance
+Bn1 = 0.01;                      %output measurement noise
+Bn3 = 0.01*eye(2);
+Bn4 = 0.01*eye(3);
+
+% Obtaining Luenberger observers for use in LQG
+[L1,P,E] = lqe(A,Bd,V1,Bd,Bn1);
+[L3,P,E] = lqe(A,Bd,V3,Bd,Bn3);
+[L4,P,E] = lqe(A,Bd,V4,Bd,Bn4);
+
+%x(t) is best "smallest" output vector
+
+%LQG Section for both linear and non-linear using x(t) output vector
+
+%Linearized system to make LQD using 
+C = V1; %x(t) was best "smallest" output vector
+sys_lqr = ss(A,[B B],C,[zeros(1,1) zeros(1,1)]);
+vd = 0.1 * eye(1);
+vn = 1;
+sen = [1];
+known = [1];
+
+%Obtain l Matrix using Kalman filter
+[~,L,~] = kalman(sys_lqr,vd,vn,[],sen,known)
+states = {'x','theta1','theta2','x_dot','theta1_dot','theta2_dot','e_1','e_2','e_3','e_4','e_5','e_6'};
+inputs = {'F'};
+outputs = {'x'};
+
+% Closed Loop Controller on original nonlinear system
+Ac = [A-B*K B*K;zeros(size(A)) A-L*C];
+Bc = zeros(12,1);
+Cc = [C zeros(size(C))];
+sys_cl_lqg = ss(Ac,Bc,Cc,D, 'statename',states,'inputname',inputs,'outputname',outputs);    
+
+% Set initial conditions to x=5; th1=5 degrees, th2=10 degrees
+x0 = [ 5 ; 0.1 ; 0.2 ; 0 ;0 ; 0 ; 0 ; 0 ; 0 ; 0 ; 0 ; 0];
+t = 0:0.01:100;
+F = zeros(size(t));
+[Y,~,X] = lsim(sys_cl_lqg,F,t,x0);
+
+% Input vector: u=K * x(t)
+u = zeros(size(t));
+for i = 1:size(X,1)
+   u(i) = K * (X(i,1:6))';
+end
+Xhat = X(:,1) - X(:,6);
+
+figure ('Name', 'LQG Controller applied to original system')
+subplot(2,2,1);
+plot(t,Y(:,1),'k')
+ylabel('system response of the cart')
+xlabel('time in s')
+grid on;
+
+subplot(2,2,2);
+plot(t,Xhat, 'b')
+ylabel('xHat of the cart')
+xlabel('time in s')
+grid on;
+
+subplot(2,2,3);
+plot(t,X(:,1),'r')
+ylabel('x position of the cart')
+xlabel('time in s')
+grid on;
+
 
 function sdot = linearized_model(s,t,A,B,K)
 %% Linearized Model
