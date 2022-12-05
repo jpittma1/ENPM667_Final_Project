@@ -115,7 +115,7 @@ B = subs (J_U,{sym('x_a'),sym('th1'), sym('th2'), sym('Dx'),sym('Dth1'), sym('Dt
 % Create Controllability Matrix/conditions for
 %       M, m1, m2, l1, l2
 
-% C = [C = B AB A2B A3B A4B A5B]
+% C = [B AB A2B A3B A4B A5B]
 
 C = B;
 temp = B;
@@ -123,7 +123,6 @@ temp = B;
 n = size(A)-1;
 
 for i = 1:n
-%     temp = (A.^i)*temp;
     temp = A*temp;
     C = horzcat(C, temp);
 end
