@@ -1,7 +1,7 @@
 % ENPM 667 Fall 2022
 % Final Project
 % Jerry Pittman (117077120
-% Bob Reiter ((119457924)
+% Bob Reiter (119457924)
 
 clear; 
 clc;
