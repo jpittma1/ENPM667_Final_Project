@@ -115,7 +115,7 @@ B = subs (J_U,{sym('x_a'),sym('th1'), sym('th2'), sym('Dx'),sym('Dth1'), sym('Dt
 % Create Controllability Matrix/conditions for
 %       M, m1, m2, l1, l2
 
-% C = [B AB A2B A3B A4B A5B]
+% C = [C = B AB A2B A3B A4B A5B]
 
 C = B;
 temp = B;
@@ -123,6 +123,7 @@ temp = B;
 n = size(A)-1;
 
 for i = 1:n
+%     temp = (A.^i)*temp;
     temp = A*temp;
     C = horzcat(C, temp);
 end
@@ -414,7 +415,7 @@ Bn4 = 0.01*eye(3);
 
 %LQG Section for both linear and non-linear using x(t) output vector
 
-%Linearized system to make LQD using 
+%Linearized system to make LQG using 
 C = V1; %x(t) was best "smallest" output vector
 sys_lqr = ss(A,[B B],C,[zeros(1,1) zeros(1,1)]);
 vd = 0.1 * eye(1);
